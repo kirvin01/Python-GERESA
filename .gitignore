@@ -1,0 +1,19 @@
+# Archivos de hojas de cálculo
+*.xlsx
+*.csv
+
+# Archivos comprimidos
+*.rar
+*.zip
+
+# Entornos virtuales de Python
+venv/
+venv2*/
+
+# Directorios de desarrollo específicos
+.vscode/
+.idea/
+__pycache__/
+
+# Archivos de configuración sensibles
+*.env
