@@ -1,3 +1,4 @@
+from decouple import config
 import pandas as pd
 import numpy as np
 import os
