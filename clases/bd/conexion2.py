@@ -12,11 +12,7 @@ from sqlalchemy import create_engine
 class MyDatabase2():
 
     def __init__(self):
-       # host = '192.168.1.7'
-       # user = 'postgres'
-       # password = '213141'
-       # database = 'irvin_hisminsa'
-       # port = 5432
+    
         
         host = config('DB_HOST')
         user = config('DB_USER')
