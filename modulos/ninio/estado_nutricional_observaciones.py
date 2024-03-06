@@ -1,4 +1,5 @@
 # %%
+from decouple import config
 import pandas as pd
 import numpy as np
 import os
@@ -6,48 +7,98 @@ import glob as gb
 import sys
 from decimal import Decimal
 import datetime
-#sys.path.insert(0, "/clases/bd/")
-#from conexion import MyDatabase
-#import conexion 
-sys.path.insert(0, "../../")
+
+
+sys.path.insert(0, config('PROYECTO_DIR'))
 from clases.bd.conexion2 import MyDatabase2
 conn = MyDatabase2()
 
-#from clases.bd.paciente import CPaciente
-#cpaciente = CPaciente()
-
-
+anio=config('SYS_ANIO')
 
 
 # %%
 
-def consulta_sql(conn,st):
-    q=''
-    if st==1:
-        q='AND nt.peso IS NOT NULL AND nt.talla IS NOT NULL ' 
-    else :
-        q="AND codigo_item in('Z001','99381','99381.01','99382','99383')"
-    menores = conn.df("""
-SELECT *
-FROM( 
-SELECT DISTINCT nt.id_paciente , nt.anio , nt.mes , nt.id_establecimiento, mhe.nombre_eess  , nt.anio_actual_paciente AS edad_anio, ROUND((nt.fecha_atencion - mp.fecha_nacimiento)/ 30.44, 1) AS edad_mes,(nt.fecha_atencion - mp.fecha_nacimiento) AS edad_dia, nt.fecha_atencion, nt.peso,ROUND(nt.talla,2) as talla, nt.lote, nt.num_pag, nt.codigo_item, mhtd.abrev_tipo_doc, mp.numero_documento, mp.fecha_nacimiento, mp.genero, mhe.cod_red  , mhe.red , mhe.cod_mred , mhe.microred, mhe.provincia, mhe.distrito, mhe.cod_eess , nt.id_pais, concat(mp2.numero_documento, ' - ', mp2.nombres_personal, ' ', mp2.apellido_paterno_personal, ' ', mp2.apellido_materno_personal ) AS personal , concat(mr.numero_documento, ' - ', mr.nombres_registrador, ' ', mr.apellido_paterno_registrador, ' ', mr.apellido_materno_registrador) AS registrador , 
-ROW_NUMBER() OVER (PARTITION BY nt.id_paciente ORDER BY nt.fecha_atencion DESC) AS rn
-FROM maestros.nominal_trama nt
-INNER JOIN maestros.maestro_paciente mp ON
-mp.id_paciente = nt.id_paciente
-LEFT JOIN maestros.eess_geresa_cusco mhe ON mhe.id_eess =nt.id_establecimiento 
-LEFT JOIN maestros.maestro_his_tipo_doc mhtd ON
-mhtd.id_tipo_documento = mp.id_tipo_documento
-LEFT JOIN maestros.maestro_personal mp2 ON
-mp2.id_personal = nt.id_personal
-LEFT JOIN maestros.maestro_registrador mr ON
-mr.id_registrador = nt.id_registrador
-WHERE nt.anio_actual_paciente<5 
-AND nt.anio=2023
---AND nt.mes in(1,2,4,5,6,7,8,9,10,11) 
-AND mp.fecha_nacimiento IS NOT NULL %s  AND mhe.cat NOT IN('III-1')
-)AS t WHERE t.rn = 1 
-"""% q)
+def consulta_sql(conn):
+
+    menores = conn.df(f"""
+SELECT
+	*
+FROM
+	(
+	SELECT
+		DISTINCT nt.id_paciente ,
+		nt.anio ,
+		nt.mes ,
+		nt.id_establecimiento,
+		mhe.nombre_eess ,
+		nt.anio_actual_paciente AS edad_anio,
+		ROUND((nt.fecha_atencion - mp.fecha_nacimiento)/ 30.44,
+		1) AS edad_mes,
+		(nt.fecha_atencion - mp.fecha_nacimiento) AS edad_dia,
+		nt.fecha_atencion,
+		nt.peso,
+		ROUND(nt.talla,
+		2) AS talla,
+		nt.lote,
+		nt.num_pag,
+		nt.codigo_item,
+		mhtd.abrev_tipo_doc,
+		mp.numero_documento,
+		mp.fecha_nacimiento,
+		mp.genero,
+		mhe.cod_red ,
+		mhe.red ,
+		mhe.cod_mred ,
+		mhe.microred,
+		mhe.provincia,
+		mhe.distrito,
+		mhe.cod_eess ,
+		nt.id_pais,
+		concat(mp2.numero_documento,
+		' - ',
+		mp2.nombres_personal,
+		' ',
+		mp2.apellido_paterno_personal,
+		' ',
+		mp2.apellido_materno_personal ) AS personal ,
+		concat(mr.numero_documento,
+		' - ',
+		mr.nombres_registrador,
+		' ',
+		mr.apellido_paterno_registrador,
+		' ',
+		mr.apellido_materno_registrador) AS registrador ,
+		ROW_NUMBER() OVER (PARTITION BY mhtd.abrev_tipo_doc,
+		mp.numero_documento
+	ORDER BY
+		nt.fecha_atencion DESC) AS rn
+	FROM
+		maestros.nominal_trama nt
+	INNER JOIN maestros.nominal_trama nt2 ON
+		nt2.id_cita = nt.id_cita
+	INNER JOIN maestros.maestro_paciente mp ON
+		mp.id_paciente = nt.id_paciente
+	LEFT JOIN maestros.eess_geresa_cusco mhe ON
+		mhe.id_eess = nt.id_establecimiento
+	LEFT JOIN maestros.maestro_his_tipo_doc mhtd ON
+		mhtd.id_tipo_documento = mp.id_tipo_documento
+	LEFT JOIN maestros.maestro_personal mp2 ON
+		mp2.id_personal = nt.id_personal
+	LEFT JOIN maestros.maestro_registrador mr ON
+		mr.id_registrador = nt.id_registrador
+	WHERE
+		nt.anio_actual_paciente<5
+		AND nt.anio = {anio}
+		--AND nt.mes in(1,2,4,5,6,7,8,9,10,11) 
+		AND mp.fecha_nacimiento IS NOT NULL
+		AND mhe.cat NOT IN('III-1')-- hospital
+		AND mhe.id_eess NOT IN('35937', '35938', '36087', '36090', '36147', '36834', '39165', '39185', '39188')	--salud mental	
+		AND nt2.codigo_item !='C0011' --AND  nt2.codigo_item != 'Z001'		
+		AND nt.codigo_item in('Z001','99381','99381.01','99382','99383')--registros evaluados para las observaciones 
+)AS t
+WHERE
+	t.rn = 1 
+""")
     return menores
 
 #menores=consulta_sql(conn)
@@ -296,7 +347,7 @@ def fun_df_EstadoNutricional(Estructura):
 
 
 # %%
-conn = MyDatabase2()
+#conn = MyDatabase2()
 
 # consultas SQLs
 
@@ -307,7 +358,7 @@ talla_edad=consulta_talla_edad(conn)
 peso_talla=consulta_peso_talla(conn)
 
 # %%
-menores_obs=consulta_sql(conn,0) #0=observados; 1=reporte 
+menores_obs=consulta_sql(conn) #0=observados; 1=reporte 
 #obs.head(1)
 #Estructura
 menores_obs = estructura_df(menores_obs)
@@ -317,7 +368,7 @@ Estructura_obs=fun_estructura_df(menores_obs)
 #calculo Zscore-----------------------------------------
 Estructura_obs['Zp_e'] = Estructura_obs.apply(lambda row:ZPeso_edad(row,peso_edad), axis=1)
 Estructura_obs['Zt_e'] = Estructura_obs.apply(lambda row:ZTalla_edad(row,talla_edad), axis=1)
-Estructura_obs['Zp_t'] = Estructura_obs.apply(lambda row: ZPeso_Talla(row, peso_talla), axis=1)
+Estructura_obs['Zp_t'] = Estructura_obs.apply(lambda row:ZPeso_Talla(row, peso_talla), axis=1)
 Estructura_obs['id_obs'] = Estructura_obs.apply(fun_registros_obs, axis=1)
 
 #Estructura.to_excel('obserbados.xlsx', index=False)
@@ -335,7 +386,7 @@ observados=fun_df_observados(Estructura_obs,obs,observados_obs_1)
 
 # %%
 #observados=fun_df_observados(Estructura)
-conn = MyDatabase2()
+#conn = MyDatabase2()
 #conn.sql('delete from public.excluidos_5_his;')
 print("insertando en tabla de observados ojo antes ejecute Anemia")
 d=conn.sqli(observados,'excluidos_5_his')
@@ -364,7 +415,8 @@ nombre_mes_abreviado = nombre_mes[fecha_actual.month]
 fecha_formateada = fecha_actual.strftime(f"{nombre_mes_abreviado}_%d_%Y")
 
 sql=conn.df("SELECT id_paciente,anio,mes,red,microred,nombre_eess ,fecha_atencion,abrev_tipo_doc,numero_documento,paciente,fecha_nacimiento,edad_anio,edad_mes,edad_dia,genero,peso,talla,hemoglobina,fecha_resultado_hb,descripcion_centro_poblado,cod_eess ,provincia,distrito,personal,registrador,lote,num_pag,codigo_item,id_obs,diagnostico as observaciones FROM excluidos_5_his eh") 
-sql.to_excel(f"observados_EN_A_ene_{fecha_formateada}.xlsx", index=False)
+#sql.to_excel(f"observados_EN_A_ene_{fecha_formateada}.xlsx", index=False)
+sql.to_excel(f"excel/observados_EN_A.xlsx", index=False)
 #observados.to_excel(f"observados_EN_A_ene_{fecha_formateada}2.xlsx", index=False)
 
 # %%

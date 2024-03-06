@@ -1,13 +1,17 @@
 # %%
+from decouple import config
 import pandas as pd
 import numpy as np
 import os
 import glob as gb
 import sys
 import datetime
-sys.path.insert(0, "../../")
+from decimal import Decimal
+sys.path.insert(0, config('PROYECTO_DIR'))
 from clases.bd.conexion2 import MyDatabase2
 conn = MyDatabase2()
+
+anio=config('SYS_ANIO')
 
 #funciones 
 
@@ -20,7 +24,7 @@ def consulta_sql(conn,st):
     else :
         q='' #no tiene hemoglobina 
 
-    menores = conn.df(""" SELECT * FROM (   
+    menores = conn.df(f""" SELECT * FROM (   
     SELECT  nt.id_paciente ,
 nt.anio ,
 nt.mes ,
@@ -52,7 +56,7 @@ mhe.cod_eess,
 nt.id_pais,
 concat(mp2.numero_documento,' - ', mp2.nombres_personal,' ', mp2.apellido_paterno_personal,' ', mp2.apellido_materno_personal ) AS personal  ,
 concat(mr.numero_documento,' - ',mr.nombres_registrador,' ',mr.apellido_paterno_registrador,' ',mr.apellido_materno_registrador) AS registrador,
-ROW_NUMBER() OVER (PARTITION BY nt.id_paciente ORDER BY nt.fecha_atencion DESC) AS rn
+ROW_NUMBER() OVER (PARTITION BY mhtd.abrev_tipo_doc, mp.numero_documento ORDER BY nt.fecha_atencion DESC) AS rn
 FROM maestros.nominal_trama nt 
 INNER JOIN maestros.maestro_paciente mp ON mp.id_paciente =nt.id_paciente 
 LEFT JOIN maestros.eess_geresa_cusco mhe ON mhe.id_eess =nt.id_establecimiento 
@@ -61,8 +65,8 @@ LEFT JOIN maestros.maestro_personal mp2 ON mp2.id_personal=nt.id_personal
 LEFT JOIN maestros.maestro_registrador mr ON mr.id_registrador =nt.id_registrador 
 LEFT JOIN maestros.maestro_his_centro_poblado mhcp ON nt.id_centro_poblado = mhcp.id_centro_poblado 
 WHERE nt.anio_actual_paciente<5 AND nt.codigo_item IN('85018','85018.01') 
---AND nt.mes in(1,2,4,5,6,7,8,9,10,11,12) 
- and nt.anio =2023
+--AND nt.mes in(1) 
+ and nt.anio ={anio}
  AND mp.fecha_nacimiento IS  NOT NULL  %s
 AND mhe.cat NOT IN('III-1')
  )AS t   WHERE t.rn=1;"""% q)
@@ -203,12 +207,6 @@ Estructura['diagnostico'] = Estructura.apply(
 
 
 # %%
-
-
-# %%
-#Estructura.to_excel('Anemia2.xlsx', index=False)
-
-# %%
 def fun_df_observados(Estructura):
   df_observados=Estructura[Estructura['id_obs']>0]
   df_observados = df_observados.drop(['diagnostico'], axis=1)
@@ -230,17 +228,17 @@ anemia=fun_df_anemia(Estructura)
 
 # %%
 observados=fun_df_observados(Estructura)
-conn = MyDatabase2()
+#conn = MyDatabase2()
 conn.sql('delete from public.excluidos_5_his;')
 d=conn.sqli(observados,'excluidos_5_his')
 #conn.close()
 
 
 anemia=fun_df_anemia(Estructura)
-conn = MyDatabase2()
-conn.sql('delete from public.anemia_nenores_5;')
-d=conn.sqli(anemia,'anemia_nenores_5')
-conn.close()
+#conn = MyDatabase2()
+#conn.sql('delete from public.anemia_nenores_5;')
+#d=conn.sqli(anemia,'anemia_nenores_5')
+#conn.close()
 #print(d)
 
 # %%
@@ -258,11 +256,11 @@ nombre_mes = {
 nombre_mes_abreviado = nombre_mes[fecha_actual.month]
 
 # Formatear la fecha con el nombre abreviado del mes en español
-#fecha_formateada = fecha_actual.strftime(f"{nombre_mes_abreviado}_%d_%Y")
+fecha_formateada = fecha_actual.strftime(f"{nombre_mes_abreviado}-%d-%Y")
 
-#anemia.to_excel(f"Anemia_Niño_Ene_{fecha_formateada}_v4.xlsx", index=False)
+anemia.to_excel(f"excel/Anemia-menor-5_{fecha_formateada}.xlsx", index=False)
 
-
+conn.close()
 
 
 
