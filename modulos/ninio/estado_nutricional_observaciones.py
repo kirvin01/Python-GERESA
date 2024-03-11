@@ -90,10 +90,10 @@ FROM
 		nt.anio_actual_paciente<5
 		AND nt.anio = {anio}
 		--AND nt.mes in(1,2,4,5,6,7,8,9,10,11) 
-		AND mp.fecha_nacimiento IS NOT NULL
+	AND mp.fecha_nacimiento IS NOT NULL
 		AND mhe.cat NOT IN('III-1')-- hospital
 		AND mhe.id_eess NOT IN('35937', '35938', '36087', '36090', '36147', '36834', '39165', '39185', '39188')	--salud mental	
-		AND nt2.codigo_item !='C0011' --AND  nt2.codigo_item != 'Z001'		
+		AND nt2.codigo_item NOT in('Z001','99381','99381.01','99382','99383','C0011','99499.08','99499.09','99499.10','99499.01') -- codigos excluidos del 2do dx
 		AND nt.codigo_item in('Z001','99381','99381.01','99382','99383')--registros evaluados para las observaciones 
 )AS t
 WHERE
@@ -351,7 +351,7 @@ def fun_df_EstadoNutricional(Estructura):
 
 # consultas SQLs
 
-pacientes_covid=consulta_covid(conn)
+#pacientes_covid=consulta_covid(conn)
 obs=consulta_observaciones(conn)
 peso_edad=consulta_peso_edad(conn)
 talla_edad=consulta_talla_edad(conn)
@@ -359,6 +359,9 @@ peso_talla=consulta_peso_talla(conn)
 
 # %%
 menores_obs=consulta_sql(conn) #0=observados; 1=reporte 
+
+# Filtrar las filas que solo están en `menores_obs`
+
 #obs.head(1)
 #Estructura
 menores_obs = estructura_df(menores_obs)
@@ -387,7 +390,7 @@ observados=fun_df_observados(Estructura_obs,obs,observados_obs_1)
 # %%
 #observados=fun_df_observados(Estructura)
 #conn = MyDatabase2()
-#conn.sql('delete from public.excluidos_5_his;')
+conn.sql('delete from public.excluidos_5_his;')
 print("insertando en tabla de observados ojo antes ejecute Anemia")
 d=conn.sqli(observados,'excluidos_5_his')
 
