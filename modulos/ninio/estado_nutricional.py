@@ -30,9 +30,12 @@ def consulta_sql(conn,st):
     menores = conn.df("""
 SELECT *
 FROM( 
-SELECT DISTINCT nt.id_paciente , nt.anio , nt.mes , nt.id_establecimiento, mhe.nombre_eess  , nt.anio_actual_paciente AS edad_anio, ROUND((nt.fecha_atencion - mp.fecha_nacimiento)/ 30.44, 1) AS edad_mes,(nt.fecha_atencion - mp.fecha_nacimiento) AS edad_dia, nt.fecha_atencion, nt.peso,ROUND(nt.talla,1) as talla, nt.lote, nt.num_pag, nt.codigo_item, mhtd.abrev_tipo_doc, mp.numero_documento, mp.fecha_nacimiento, mp.genero, mhe.cod_red  , mhe.red , mhe.cod_mred , mhe.microred, mhe.provincia, mhe.distrito, mhe.cod_eess , nt.id_pais, concat(mp2.numero_documento, ' - ', mp2.nombres_personal, ' ', mp2.apellido_paterno_personal, ' ', mp2.apellido_materno_personal ) AS personal , concat(mr.numero_documento, ' - ', mr.nombres_registrador, ' ', mr.apellido_paterno_registrador, ' ', mr.apellido_materno_registrador) AS registrador , ROW_NUMBER() OVER (PARTITION BY nt.id_paciente
+SELECT DISTINCT 
+nt.id_paciente , nt.anio , nt.mes , 
+nt.id_establecimiento, mhe.nombre_eess  , nt.anio_actual_paciente AS edad_anio, 
+ROUND((nt.fecha_atencion - mp.fecha_nacimiento)/ 30.44, 1) AS edad_mes,(nt.fecha_atencion - mp.fecha_nacimiento) AS edad_dia, nt.fecha_atencion, nt.peso,ROUND(nt.talla,1) as talla, nt.lote, nt.num_pag, nt.codigo_item, mhtd.abrev_tipo_doc, mp.numero_documento, mp.fecha_nacimiento, mp.genero, mhe.cod_red  , mhe.red , mhe.cod_mred , mhe.microred, mhe.provincia, mhe.distrito, mhe.cod_eess , nt.id_pais, concat(mp2.numero_documento, ' - ', mp2.nombres_personal, ' ', mp2.apellido_paterno_personal, ' ', mp2.apellido_materno_personal ) AS personal , concat(mr.numero_documento, ' - ', mr.nombres_registrador, ' ', mr.apellido_paterno_registrador, ' ', mr.apellido_materno_registrador) AS registrador , ROW_NUMBER() OVER (PARTITION BY nt.id_paciente
 ORDER BY nt.fecha_atencion DESC) AS rn
-FROM maestros.nominal_trama nt
+FROM maestros.nominaltrama2024 nt
 INNER JOIN maestros.maestro_paciente mp ON
 mp.id_paciente = nt.id_paciente
 LEFT JOIN maestros.eess_geresa_cusco mhe ON mhe.id_eess =nt.id_establecimiento 
@@ -147,8 +150,7 @@ def ZPeso_edad(row, df_p_e):
     sexo = row['genero']
     # talla = row['talla']
     peso = row['peso']
-    df_p_e = df_p_e.loc[(df_p_e['edad_dias'] == dia) & (
-        df_p_e['sexo'] == sexo), ['l', 'm', 's']]  # .values[0]
+    df_p_e = df_p_e.loc[(df_p_e['edad_dias'] == dia) & (df_p_e['sexo'] == sexo), ['l', 'm', 's']]  # .values[0]
     # df_p_e.to_float()
     Z = 0
     if len(df_p_e) > 0:

@@ -73,7 +73,7 @@ FROM
 	ORDER BY
 		nt.fecha_atencion DESC) AS rn
 	FROM
-		maestros.nominal_trama nt
+		maestros.nominaltrama2024 nt
 	INNER JOIN maestros.nominal_trama nt2 ON
 		nt2.id_cita = nt.id_cita
 	INNER JOIN maestros.maestro_paciente mp ON

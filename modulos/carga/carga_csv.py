@@ -37,7 +37,7 @@ pgcursor.execute("TRUNCATE TABLE maestros.nominal_trama_2024")
 # print(ruta_datos)
 
 # carpeta contenedor de datos Zip
-dx = gb.glob("D:/Irvin/Irvin/Python/data/2024/csv/*.csv")
+dx = gb.glob("D:/Irvin/Python/data/2024/csv/*.csv")
 print(dx)
 
 # lista de df
@@ -53,4 +53,4 @@ for f in dx:
     #   print("Carga Completada: "+name)
 print("Termino el Proceso")
 
-pgcursor.execute("SELECT crea_nominal_trama2()")
+#pgcursor.execute("SELECT crea_nominal_trama2()")

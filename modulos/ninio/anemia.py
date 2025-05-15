@@ -57,7 +57,7 @@ nt.id_pais,
 concat(mp2.numero_documento,' - ', mp2.nombres_personal,' ', mp2.apellido_paterno_personal,' ', mp2.apellido_materno_personal ) AS personal  ,
 concat(mr.numero_documento,' - ',mr.nombres_registrador,' ',mr.apellido_paterno_registrador,' ',mr.apellido_materno_registrador) AS registrador,
 ROW_NUMBER() OVER (PARTITION BY mhtd.abrev_tipo_doc, mp.numero_documento ORDER BY nt.fecha_atencion DESC) AS rn
-FROM maestros.nominal_trama nt 
+FROM maestros.nominaltrama2024 nt 
 INNER JOIN maestros.maestro_paciente mp ON mp.id_paciente =nt.id_paciente 
 LEFT JOIN maestros.eess_geresa_cusco mhe ON mhe.id_eess =nt.id_establecimiento 
 LEFT JOIN maestros.maestro_his_tipo_doc mhtd ON mhtd.id_tipo_documento =mp.id_tipo_documento 
