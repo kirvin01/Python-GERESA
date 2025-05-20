@@ -36,7 +36,7 @@ class SQLServerConnector:
             self.engine = create_engine(conn_str, fast_executemany=True)
 
             with self.engine.connect() as conn:
-                print("✅ Conexión exitosa a SQL Server")
+                print("✅ Conexión exitosa a SQL Server " + config('DB_DATABASE'))
 
         except SQLAlchemyError as e:
             print("❌ Error al conectar a SQL Server:")
@@ -48,20 +48,18 @@ class SQLServerConnector:
             print(f"✅ DataFrame insertado correctamente en '{nombre_tabla}'")
         except Exception as e:
             print(f"❌ Error al insertar el DataFrame: {e}")
-
-    def listar_tablas(self):
-        if self.engine:
-            inspector = inspect(self.engine)
-            return inspector.get_table_names()
-        else:
-            print("⚠️ No hay conexión activa.")
-            return []
-
-    def ejecutar_sql(self, query):
+  
+    def ejecutar_sql(self, query, retornar_datos=True):
         try:
             with self.engine.connect() as conn:
                 result = conn.execute(text(query))
-                return result.fetchall()
+                if retornar_datos:
+                    try:
+                        return result.fetchall()
+                    except Exception:
+                        return []
+                else:
+                    return result.rowcount  # útil para INSERT, UPDATE, DELETE
         except Exception as e:
             print(f"❌ Error al ejecutar la consulta: {e}")
             return None
