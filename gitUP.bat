@@ -10,8 +10,9 @@ git submodule foreach "git add . && git commit -m \"%commitmsg%\" && git push ||
 REM Subir cambios en el proyecto principal
 git add .
 git commit -m "%commitmsg%"
-git push origin master
+git push origin main
 
 echo.
 echo ✅ Actualización enviada a GitHub con mensaje: %commitmsg%
 pause
+
