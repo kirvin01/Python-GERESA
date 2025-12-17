@@ -12,7 +12,8 @@ class SQLServerConnector:
         self.username = config('DB_USER')
         self.password = config('DB_PASSWORD')
         self.port = config('DB_PORT')
-        self.driver = 'ODBC Driver 17 for SQL Server'
+        #self.driver = 'ODBC Driver 17 for SQL Server'
+        self.driver = 'ODBC Driver 18 for SQL Server'.replace(' ', '+')
         
         # Usar el parámetro 'database' si se proporciona, o el valor por defecto del archivo .env
         self.database = database if database else config('DB_DATABASE')
@@ -43,7 +44,7 @@ class SQLServerConnector:
 
     def insertar_dataframe(self, df: pd.DataFrame, nombre_tabla: str, if_exists='append', dtype=None, chunksize=100000):
         try:
-            # Iniciar una transacción explícita
+            # Iniciar una transacción explícita replace , append
             with self.engine.begin() as conn:
                 # Insertar los datos en lotes de tamaño definido por chunksize
                 df.to_sql(nombre_tabla, conn, if_exists=if_exists, index=False, dtype=dtype, chunksize=chunksize)
@@ -53,18 +54,17 @@ class SQLServerConnector:
 
     def ejecutar_sql(self, query, retornar_datos=True):
         try:
-            with self.engine.connect() as conn:
+            # Inicia una transacción automática (con commit/rollback)
+            with self.engine.begin() as conn:
                 result = conn.execute(text(query))
-                if retornar_datos:
-                    try:
-                        return result.fetchall()
-                    except Exception:
-                        return []
+                if retornar_datos and result.returns_rows:
+                    return result.fetchall()
                 else:
-                    return result.rowcount  # útil para INSERT, UPDATE, DELETE
+                    return result.rowcount
         except Exception as e:
             print(f"❌ Error al ejecutar la consulta: {e}")
             return None
+
 
     # Método para cambiar la base de datos de forma dinámica
     def cambiar_base_datos(self, nueva_base_datos):

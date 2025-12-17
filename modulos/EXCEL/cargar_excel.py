@@ -1,6 +1,7 @@
 from decouple import config
 import pandas as pd
 import sys
+import visions as v
 import unicodedata
 sys.path.insert(0, config('PROYECTO_DIR'))
 from clases.bd.conexion import  SQLServerConnector
